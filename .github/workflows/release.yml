@@ -67,33 +67,29 @@ jobs:
       - name: Generate temporary changelog
         id: temp-changelog
         run: |
-          previous_tag=${{ steps.get-latest-tag.outputs.latest_tag }}
-          echo "## [v${{ steps.semver.outputs.new_version }}] - $(date +'%Y-%m-%d')" > temp_changelog.md
-          echo "" >> temp_changelog.md
-
-          echo "## [v${new_version}] - $(date +'%Y-%m-%d')" > temp_changelog.md
+          echo "## [${{ steps.semver.outputs.new_version }}] - $(date +'%Y-%m-%d')" > temp_changelog.md
           echo "" >> temp_changelog.md
           
           # Generate categorized changelog
           echo "### Added" >> temp_changelog.md
-          git log ${previous_tag}..HEAD --pretty=format:"* %s" | grep -E "^feat:" | sed 's/^feat: //' >> temp_changelog.md
+          git log ${{ steps.get-latest-tag.outputs.latest_tag }}..HEAD --pretty=format:"* %s" | grep -E "^feat:" | sed 's/^feat: //' >> temp_changelog.md
           echo "" >> temp_changelog.md
           
           echo "### Fixed" >> temp_changelog.md
-          git log ${previous_tag}..HEAD --pretty=format:"* %s" | grep -E "^fix:" | sed 's/^fix: //' >> temp_changelog.md
+          git log ${{ steps.get-latest-tag.outputs.latest_tag }}..HEAD --pretty=format:"* %s" | grep -E "^fix:" | sed 's/^fix: //' >> temp_changelog.md
           echo "" >> temp_changelog.md
           
           echo "### Changed" >> temp_changelog.md
-          git log ${previous_tag}..HEAD --pretty=format:"* %s" | grep -E "^refactor:|^style:|^chore:" | sed -E 's/^(refactor|style|chore): //' >> temp_changelog.md
+          git log ${{ steps.get-latest-tag.outputs.latest_tag }}..HEAD --pretty=format:"* %s" | grep -E "^refactor:|^style:|^chore:" | sed -E 's/^(refactor|style|chore): //' >> temp_changelog.md
           echo "" >> temp_changelog.md
           
           echo "### Breaking Changes" >> temp_changelog.md
-          git log ${previous_tag}..HEAD --pretty=format:"* %s" | grep -E "BREAKING CHANGE|!:" >> temp_changelog.md
+          git log ${{ steps.get-latest-tag.outputs.latest_tag }}..HEAD --pretty=format:"* %s" | grep -E "BREAKING CHANGE|!:" >> temp_changelog.md
           echo "" >> temp_changelog.md
           
           # Also capture uncategorized commits
           echo "### Other" >> temp_changelog.md
-          git log ${previous_tag}..HEAD --pretty=format:"* %s" | grep -Ev "^(feat|fix|refactor|style|chore):|BREAKING CHANGE|!:" >> temp_changelog.md
+          git log ${{ steps.get-latest-tag.outputs.latest_tag }}..HEAD --pretty=format:"* %s" | grep -Ev "^(feat|fix|refactor|style|chore):|BREAKING CHANGE|!:" >> temp_changelog.md
           echo "" >> temp_changelog.md
           
           # Generate release link at the bottom
