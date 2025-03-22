@@ -32,10 +32,6 @@ variable "app_port" {
   type = number
 }
 
-variable "image" {
-  type = string
-}
-
 variable "listener_arn" {
   type = string
 }

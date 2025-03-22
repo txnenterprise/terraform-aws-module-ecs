@@ -3,7 +3,7 @@ resource "aws_ecs_service" "service" {
   cluster         = var.ecs_cluster_id
   task_definition = aws_ecs_task_definition.this.arn
   desired_count   = 1
-  launch_type     = "FARGATE"
+  launch_type     = "EC2"
 
   network_configuration {
     subnets          = data.aws_subnets.private.ids

@@ -70,6 +70,9 @@ jobs:
           previous_tag=${{ steps.get-latest-tag.outputs.latest_tag }}
           echo "## [v${{ steps.semver.outputs.new_version }}] - $(date +'%Y-%m-%d')" > temp_changelog.md
           echo "" >> temp_changelog.md
+
+          echo "## [v${new_version}] - $(date +'%Y-%m-%d')" > temp_changelog.md
+          echo "" >> temp_changelog.md
           
           # Generate categorized changelog
           echo "### Added" >> temp_changelog.md

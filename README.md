@@ -53,7 +53,6 @@ module "ecs_fargate_service" {
   owner           = "devops"
   vpc_id          = "vpc-12345678"
   ecs_cluster_id  = "arn:aws:ecs:us-east-1:123456789012:cluster/my-cluster"
-  image           = "123456789012.dkr.ecr.us-east-1.amazonaws.com/myapp:latest"
   app_port        = 8080
   cpu             = 256
   memory          = 512
@@ -73,7 +72,6 @@ module "ecs_fargate_service" {
 | `owner`             | string | Owner of the resources                       | "terraform"   |
 | `vpc_id`            | string | VPC ID                                       | -             |
 | `ecs_cluster_id`    | string | ECS cluster ARN                              | -             |
-| `image`             | string | Container image (e.g., ECR or Docker Hub)    | -             |
 | `app_port`          | number | Application port in the container            | -             |
 | `cpu`               | number | CPU for the task (e.g., 256, 512)            | -             |
 | `memory`            | number | Memory for the task (e.g., 512, 1024)        | -             |
