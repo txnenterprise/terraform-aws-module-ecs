@@ -97,7 +97,7 @@ jobs:
           echo "" >> temp_changelog.md
           
           # Generate release link at the bottom
-          echo "[v${{ steps.semver.outputs.new_version }}]: https://github.com/${{ github.repository }}/compare/${{ steps.get-latest-tag.outputs.latest_tag }}...v${{ steps.semver.outputs.new_version }}" >> temp_changelog.md
+          echo "[${{ steps.semver.outputs.new_version }}]: https://github.com/${{ github.repository }}/compare/${{ steps.get-latest-tag.outputs.latest_tag }}...${{ steps.semver.outputs.new_version }}" >> temp_changelog.md
       
       - name: Update CHANGELOG.md
         run: |
