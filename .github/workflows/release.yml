@@ -1,10 +1,8 @@
 name: Release Workflow
-
 on:
   push:
     branches:
       - main
-
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -15,7 +13,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Get latest tag
         id: get-latest-tag
         run: |
@@ -23,7 +20,6 @@ jobs:
           latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           echo "Latest tag found: ${latest_tag}"
           echo "latest_tag=${latest_tag}" >> $GITHUB_OUTPUT
-
       - name: Determine version bump
         id: version-bump
         run: |
@@ -36,31 +32,25 @@ jobs:
           else
             echo "bump=patch" >> $GITHUB_OUTPUT
           fi
-
       - name: Calculate new version
         id: semver
         run: |
           latest_tag="${{ steps.get-latest-tag.outputs.latest_tag }}"
           echo "Processing latest tag: ${latest_tag}"
-          
           # Remove 'v' prefix and ensure we have a valid version
           latest_version=${latest_tag#v}
           echo "Version without v: ${latest_version}"
-          
           # Ensure we have valid numbers
           if [[ ! $latest_version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Invalid version format. Using 0.0.0"
             latest_version="0.0.0"
           fi
-          
           # Split version into components
           IFS='.' read -r major minor patch <<< "$latest_version"
           echo "Current version components: major=${major}, minor=${minor}, patch=${patch}"
-          
           # Calculate new version
           bump_type="${{ steps.version-bump.outputs.bump }}"
           echo "Bump type: ${bump_type}"
-          
           case $bump_type in
             major)
               new_version="$((major + 1)).0.0"
@@ -72,23 +62,82 @@ jobs:
               new_version="${major}.${minor}.$((patch + 1))"
               ;;
           esac
-          
           echo "Calculated new version: v${new_version}"
           echo "new_version=v${new_version}" >> $GITHUB_OUTPUT
-
-      - name: Generate changelog
-        id: changelog
+      - name: Generate temporary changelog
+        id: temp-changelog
         run: |
           previous_tag=${{ steps.get-latest-tag.outputs.latest_tag }}
-          echo "### Changes" > changelog.md
-          echo "" >> changelog.md
-          git log ${previous_tag}..HEAD --pretty=format:"* %s" >> changelog.md
-
+          echo "## [v${{ steps.semver.outputs.new_version }}] - $(date +'%Y-%m-%d')" > temp_changelog.md
+          echo "" >> temp_changelog.md
+          
+          # Generate categorized changelog
+          echo "### Added" >> temp_changelog.md
+          git log ${previous_tag}..HEAD --pretty=format:"* %s" | grep -E "^feat:" | sed 's/^feat: //' >> temp_changelog.md
+          echo "" >> temp_changelog.md
+          
+          echo "### Fixed" >> temp_changelog.md
+          git log ${previous_tag}..HEAD --pretty=format:"* %s" | grep -E "^fix:" | sed 's/^fix: //' >> temp_changelog.md
+          echo "" >> temp_changelog.md
+          
+          echo "### Changed" >> temp_changelog.md
+          git log ${previous_tag}..HEAD --pretty=format:"* %s" | grep -E "^refactor:|^style:|^chore:" | sed -E 's/^(refactor|style|chore): //' >> temp_changelog.md
+          echo "" >> temp_changelog.md
+          
+          echo "### Breaking Changes" >> temp_changelog.md
+          git log ${previous_tag}..HEAD --pretty=format:"* %s" | grep -E "BREAKING CHANGE|!:" >> temp_changelog.md
+          echo "" >> temp_changelog.md
+          
+          # Also capture uncategorized commits
+          echo "### Other" >> temp_changelog.md
+          git log ${previous_tag}..HEAD --pretty=format:"* %s" | grep -Ev "^(feat|fix|refactor|style|chore):|BREAKING CHANGE|!:" >> temp_changelog.md
+          echo "" >> temp_changelog.md
+          
+          # Generate release link at the bottom
+          echo "[v${{ steps.semver.outputs.new_version }}]: https://github.com/${{ github.repository }}/compare/${{ steps.get-latest-tag.outputs.latest_tag }}...v${{ steps.semver.outputs.new_version }}" >> temp_changelog.md
+      
+      - name: Update CHANGELOG.md
+        run: |
+          # Create CHANGELOG.md if it doesn't exist
+          if [ ! -f CHANGELOG.md ]; then
+            echo "# Changelog" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "All notable changes to this project will be documented in this file." >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+          fi
+          
+          # Prepend new changes to existing changelog
+          if [ -f CHANGELOG.md ]; then
+            # Get the header lines (typically the first 3-4 lines)
+            head -n 4 CHANGELOG.md > changelog_header.md
+            # Get the content after the header
+            tail -n +5 CHANGELOG.md > changelog_content.md
+            # Combine header, new content, and old content
+            cat changelog_header.md > CHANGELOG.md
+            cat temp_changelog.md >> CHANGELOG.md
+            cat changelog_content.md >> CHANGELOG.md
+            # Clean up temporary files
+            rm changelog_header.md changelog_content.md
+          else
+            mv temp_changelog.md CHANGELOG.md
+          fi
+          
+          # Create simple release notes
+          cp temp_changelog.md release_notes.md
+      
+      - name: Commit updated CHANGELOG.md
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add CHANGELOG.md
+          git commit -m "chore: update CHANGELOG.md for v${{ steps.semver.outputs.new_version }}" || echo "No changes to commit"
+          git push origin main
+      
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.semver.outputs.new_version }}
-          body_path: changelog.md
+          body_path: release_notes.md
           draft: false
           prerelease: false
         env:
