@@ -1,0 +1,46 @@
+name: 'Terraform Security Checks'
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**.tf'
+      - '**.tfvars'
+      - '.github/workflows/terraform-checks.yml'
+
+jobs:
+  tflint:
+    name: TFLint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Initialize TFLint
+        run: tflint --init
+        
+      - name: Run TFLint
+        run: tflint -f compact
+
+  tfsec:
+    name: TFSec
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create results directory
+        run: mkdir -p results
+        
+      - name: Run TFSec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          soft_fail: true

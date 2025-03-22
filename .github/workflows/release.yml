@@ -1,0 +1,95 @@
+name: Release Workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag
+        id: get-latest-tag
+        run: |
+          git fetch --tags
+          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "Latest tag found: ${latest_tag}"
+          echo "latest_tag=${latest_tag}" >> $GITHUB_OUTPUT
+
+      - name: Determine version bump
+        id: version-bump
+        run: |
+          commit_message=$(git log -1 --pretty=%B)
+          echo "Commit message: ${commit_message}"
+          if [[ $commit_message == *"BREAKING CHANGE"* || $commit_message == *"!:"* ]]; then
+            echo "bump=major" >> $GITHUB_OUTPUT
+          elif [[ $commit_message == *"feat:"* ]]; then
+            echo "bump=minor" >> $GITHUB_OUTPUT
+          else
+            echo "bump=patch" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Calculate new version
+        id: semver
+        run: |
+          latest_tag="${{ steps.get-latest-tag.outputs.latest_tag }}"
+          echo "Processing latest tag: ${latest_tag}"
+          
+          # Remove 'v' prefix and ensure we have a valid version
+          latest_version=${latest_tag#v}
+          echo "Version without v: ${latest_version}"
+          
+          # Ensure we have valid numbers
+          if [[ ! $latest_version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid version format. Using 0.0.0"
+            latest_version="0.0.0"
+          fi
+          
+          # Split version into components
+          IFS='.' read -r major minor patch <<< "$latest_version"
+          echo "Current version components: major=${major}, minor=${minor}, patch=${patch}"
+          
+          # Calculate new version
+          bump_type="${{ steps.version-bump.outputs.bump }}"
+          echo "Bump type: ${bump_type}"
+          
+          case $bump_type in
+            major)
+              new_version="$((major + 1)).0.0"
+              ;;
+            minor)
+              new_version="${major}.$((minor + 1)).0"
+              ;;
+            *)
+              new_version="${major}.${minor}.$((patch + 1))"
+              ;;
+          esac
+          
+          echo "Calculated new version: v${new_version}"
+          echo "new_version=v${new_version}" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          previous_tag=${{ steps.get-latest-tag.outputs.latest_tag }}
+          echo "### Changes" > changelog.md
+          echo "" >> changelog.md
+          git log ${previous_tag}..HEAD --pretty=format:"* %s" >> changelog.md
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.semver.outputs.new_version }}
+          body_path: changelog.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
