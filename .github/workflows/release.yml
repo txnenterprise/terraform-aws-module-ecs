@@ -69,7 +69,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.semver.outputs.new_version }}
-          body_path: release_notes.md
           draft: false
           prerelease: false
         env:
