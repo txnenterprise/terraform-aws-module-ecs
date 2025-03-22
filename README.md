@@ -89,8 +89,6 @@ module "ecs_fargate_service" {
 - ECS Service Name
 - Application URL
 
-Example `outputs.tf`:
-
 ## Notes
 - **Subnets**: The code assumes private subnets with specific tags (`pvt-snet-1`, `pvt-snet-2`). Adjust the filters in `data "aws_subnets" "private"` as needed.
 - **Load Balancer**: The module expects an existing ALB and listener. It only creates the target group and listener rule.
