@@ -1,9 +1,11 @@
 resource "aws_ecs_service" "service" {
-  name            = "${local.prefix_name}-service"
-  cluster         = var.ecs_cluster_id
-  task_definition = aws_ecs_task_definition.this.arn
-  desired_count   = 1
-  launch_type     = "EC2"
+  name                               = "${local.prefix_name}-service"
+  cluster                            = var.ecs_cluster_id
+  task_definition                    = aws_ecs_task_definition.this.arn
+  deployment_minimum_healthy_percent = 100
+  deployment_maximum_percent         = 200
+  desired_count                      = 1
+  launch_type                        = "EC2"
 
   network_configuration {
     subnets          = data.aws_subnets.private.ids

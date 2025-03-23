@@ -29,7 +29,7 @@ variable "cpu" {
 }
 
 variable "app_port" {
-  type = string
+  type = number
 }
 
 variable "listener_arn" {
@@ -54,5 +54,5 @@ variable "route53_zone_id" {
 }
 
 variable "alb_cname" {
-  type    = string
+  type = string
 }
