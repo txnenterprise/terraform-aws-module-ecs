@@ -11,7 +11,7 @@ resource "aws_ecs_task_definition" "this" {
       image = "${aws_ecr_repository.this.repository_url}:latest"
       portMappings = [
         {
-          containerPort = var.app_port
+          containerPort = "${var.app_port}"
         }
       ]
       logConfiguration = {
