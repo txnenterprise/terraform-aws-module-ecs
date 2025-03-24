@@ -8,6 +8,6 @@ resource "aws_kms_key" "acw" {
 resource "aws_cloudwatch_log_group" "this" {
   name              = "/ecs/${local.prefix_name}"
   retention_in_days = 7
-  kms_key_id        = aws_kms_key.acw.id
+  kms_key_id        = aws_kms_key.acw.arn
   tags              = local.common_tags
 }
