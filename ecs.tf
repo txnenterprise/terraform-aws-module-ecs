@@ -5,7 +5,6 @@ resource "aws_ecs_service" "service" {
   deployment_minimum_healthy_percent = "100"
   deployment_maximum_percent         = "200"
   desired_count                      = "1"
-  launch_type                        = "EC2"
   scheduling_strategy                = "REPLICA"
 
   capacity_provider_strategy {
