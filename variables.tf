@@ -56,3 +56,7 @@ variable "route53_zone_id" {
 variable "alb_cname" {
   type = string
 }
+
+variable "capacity_provider" {
+  type    = string
+}

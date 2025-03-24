@@ -1,16 +1,16 @@
 resource "aws_ecs_service" "service" {
   name                               = "${local.prefix_name}-service"
   cluster                            = var.ecs_cluster_id
-  task_definition                    = aws_ecs_task_definition.this.arn
-  deployment_minimum_healthy_percent = 100
-  deployment_maximum_percent         = 200
-  desired_count                      = 1
+  task_definition                    = aws_ecs_task_definition.this.id
+  deployment_minimum_healthy_percent = "100"
+  deployment_maximum_percent         = "200"
+  desired_count                      = "1"
   launch_type                        = "EC2"
+  scheduling_strategy                = "REPLICA"
 
-  network_configuration {
-    subnets          = data.aws_subnets.private.ids
-    security_groups  = [aws_security_group.ecs_sg.id]
-    assign_public_ip = false
+  capacity_provider_strategy {
+    capacity_provider = var.capacity_provider
+    weight            = 100
   }
 
   load_balancer {
@@ -20,4 +20,11 @@ resource "aws_ecs_service" "service" {
   }
 
   tags = local.common_tags
+
+  lifecycle {
+    ignore_changes = [
+      desired_count,
+      task_definition
+    ]
+  }
 }
