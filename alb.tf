@@ -11,6 +11,7 @@ resource "aws_lb_target_group" "this" {
     timeout             = 5
     healthy_threshold   = 2
     unhealthy_threshold = 5
+    matcher             = "200-499"
   }
 
   tags = local.common_tags
